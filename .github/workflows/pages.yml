@@ -42,7 +42,7 @@ jobs:
         run: echo "fitness.salad1n.dev" > build/CNAME
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v2  # <- Hier die Version anpassen
+        uses: actions/upload-pages-artifact@v3
         with:
           path: build
 

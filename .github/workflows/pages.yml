@@ -14,27 +14,17 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - uses: actions/setup-node@v3
         with:
-          node-version: '18'  # Oder deine bevorzugte Node-Version
-
-      - name: Install Dependencies
-        run: |
-          cd frontend
-          npm install
-
-      - name: Build Frontend
-        run: |
-          cd frontend
-          npm run build
+          node-version: '18'
+      - run: npm ci
+      - run: npm run build  # falls du ein Build Script hast
 
       - uses: actions/configure-pages@v3
 
       - uses: actions/upload-pages-artifact@v2
         with:
-          path: frontend/build  # Passe den Build-Ordner an, je nachdem wie dein Build heißt
+          path: ./frontend  # Pfad zu deinen gebauten Dateien (z.B. build/ oder dist/)
 
   publish:
     needs: deploy

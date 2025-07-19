@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Fitness Tracker">
+    <title>Fitness Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 10px;
+            padding-top: max(10px, env(safe-area-inset-top));
+            padding-bottom: max(10px, env(safe-area-inset-bottom));
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: white;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .add-workout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .add-workout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            animation: modalSlide 0.3s ease;
+        }
+
+        @keyframes modalSlide {
+            from {
+                opacity: 0;
+                transform: scale(0.8) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #999;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .workout-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input, textarea {
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: white;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+            font-family: inherit;
+        }
+
+        .row-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .row-inputs input {
+            width: 100%;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .kanban-board {
+            display: flex;
+            gap: 15px;
+            overflow-x: auto;
+            padding: 10px 0;
+            min-height: 400px;
+        }
+
+        .kanban-column {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            min-width: 280px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .column-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .column-date {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+
+        .column-day {
+            font-size: 14px;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .workout-count {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-top: 5px;
+        }
+
+        .workout-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .workout-card {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid #667eea;
+            position: relative;
+            transition: all 0.3s ease;
+            animation: cardSlide 0.3s ease;
+        }
+
+        @keyframes cardSlide {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .workout-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .workout-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 10px;
+            line-height: 1.3;
+        }
+
+        .workout-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .stat-item {
+            background: #f7fafc;
+            padding: 8px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #718096;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .stat-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #f56565;
+            color: white;
+            border: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            opacity: 0.7;
+        }
+
+        .delete-btn:hover {
+            background: #e53e3e;
+            transform: scale(1.1);
+            opacity: 1;
+        }
+
+        .empty-column {
+            text-align: center;
+            color: #a0aec0;
+            font-style: italic;
+            padding: 40px 20px;
+            border: 2px dashed #e2e8f0;
+            border-radius: 12px;
+            margin-top: 10px;
+        }
+
+        /* Scrollbar styling */
+        .kanban-board::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .kanban-board::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .kanban-board::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+            }
+            
+            .kanban-column {
+                background: rgba(26, 32, 44, 0.95);
+                color: #e2e8f0;
+            }
+            
+            .column-date {
+                color: #e2e8f0;
+            }
+            
+            .column-day {
+                color: #a0aec0;
+            }
+            
+            .workout-card {
+                background: #2d3748;
+                color: #e2e8f0;
+            }
+            
+            .workout-title {
+                color: #e2e8f0;
+            }
+            
+            .stat-item {
+                background: #1a202c;
+            }
+            
+            .stat-value {
+                color: #e2e8f0;
+            }
+            
+            .empty-column {
+                color: #718096;
+                border-color: #4a5568;
+            }
+            
+            .modal-content {
+                background: #2d3748;
+                color: #e2e8f0;
+            }
+            
+            label {
+                color: #cbd5e0;
+            }
+            
+            input, textarea {
+                background: #1a202c;
+                border-color: #4a5568;
+                color: #e2e8f0;
+            }
+        }
+
+        /* Desktop optimizations */
+        @media (min-width: 768px) {
+            body {
+                padding: 20px;
+            }
+            
+            .kanban-board {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            
+            .kanban-column {
+                max-width: 300px;
+                flex: 1;
+            }
+            
+            .modal-content {
+                width: 500px;
+                max-width: 90vw;
+            }
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 767px) {
+            .kanban-board {
+                gap: 10px;
+                padding: 5px 0;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+            }
+            
+            .kanban-column {
+                min-width: 260px;
+                padding: 15px;
+                flex-shrink: 0;
+            }
+            
+            .modal-content {
+                width: 95%;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>💪 Fitness Tracker</h1>
+        <button class="add-workout-btn" onclick="openModal()">+ Neues Workout</button>
+    </div>
+
+    <div class="kanban-board" id="kanbanBoard">
+        <!-- Columns will be dynamically generated -->
+    </div>
+
+    <!-- Modal for adding workouts -->
+    <div class="modal" id="workoutModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Neues Workout</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            
+            <form class="workout-form" id="workoutForm">
+                <div class="input-group">
+                    <label for="exercise">Übung</label>
+                    <textarea id="exercise" placeholder="z.B. Bankdrücken, Kniebeugen..." required></textarea>
+                </div>
+                
+                <div class="row-inputs">
+                    <div class="input-group">
+                        <label for="reps">Wiederholungen</label>
+                        <input type="number" id="reps" placeholder="12" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="weight">Gewicht (kg)</label>
+                        <input type="number" id="weight" step="0.1" placeholder="50.5" required>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="date">Datum</label>
+                    <input type="date" id="date" required>
+                </div>
+                
+                <button type="submit" class="submit-btn">Workout hinzufügen</button>
+            </form>
+        </div>
+    </div>
+
+<script>
+  const BACKEND_URL = 'http://localhost:3000';
+
+  async function loadWorkouts() {
+    const res = await fetch(`${BACKEND_URL}/api/workouts`);
+    const workouts = await res.json();
+    const board = document.getElementById('kanbanBoard');
+    const today = new Date().toISOString().split('T')[0];
+
+    // Heutige Workouts
+    const todays = workouts.filter(w => w.date === today);
+    board.innerHTML = `
+      <div class="kanban-column">
+        <div class="column-header">
+          <div class="column-date">
+            ${new Date(today).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'})} (Heute)
+          </div>
+          <div class="column-day">
+            ${new Date(today).toLocaleDateString('de-DE',{weekday:'long'})}
+          </div>
+          ${todays.length
+            ? `<span class="workout-count">${todays.length} Workout${todays.length>1?'s':''}</span>`
+            : ''}
+        </div>
+        <div class="workout-list">
+          ${todays.length
+            ? todays.map(w => `
+                <div class="workout-card">
+                  <button class="delete-btn" onclick="deleteWorkout(${w.id})">&times;</button>
+                  <div class="workout-title">${w.exercise}</div>
+                  <div class="workout-stats">
+                    <div class="stat-item">
+                      <div class="stat-label">Wiederh.</div>
+                      <div class="stat-value">${w.reps}x</div>
+                    </div>
+                    <div class="stat-item">
+                      <div class="stat-label">Gewicht</div>
+                      <div class="stat-value">${w.weight} kg</div>
+                    </div>
+                  </div>
+                </div>`
+              ).join('')
+            : '<div class="empty-column">Keine Workouts für heute</div>'}
+        </div>
+      </div>
+    `;
+
+    // Historie
+    const history = workouts.filter(w => w.date !== today);
+    if (history.length) {
+      board.innerHTML += `
+        <div class="kanban-column">
+          <div class="column-header">
+            <div class="column-day">Historie</div>
+          </div>
+          <div class="workout-list">
+            ${history.map(w => `
+              <div class="workout-card small">
+                <div class="workout-title">${w.exercise} (${w.date})</div>
+              </div>`
+            ).join('')}
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  async function addWorkout(e) {
+    e.preventDefault();
+    const exercise = document.getElementById('exercise').value.trim();
+    const reps     = +document.getElementById('reps').value;
+    const weight   = +document.getElementById('weight').value;
+    const date     = document.getElementById('date').value;
+    if (!exercise || !reps || !weight || !date) {
+      alert('Bitte fülle alle Felder aus!');
+      return;
+    }
+    await fetch(`${BACKEND_URL}/api/workouts`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({exercise, reps, weight, date})
+    });
+    closeModal();
+    loadWorkouts();
+  }
+
+  async function deleteWorkout(id) {
+    if (!confirm('Workout wirklich löschen?')) return;
+    await fetch(`${BACKEND_URL}/api/workouts/${id}`, { method:'DELETE' });
+    loadWorkouts();
+  }
+
+  document.getElementById('workoutForm').addEventListener('submit', addWorkout);
+  document.getElementById('workoutModal').addEventListener('click', e => {
+    if (e.target.id === 'workoutModal') closeModal();
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  function openModal() {
+    document.getElementById('workoutModal').classList.add('show');
+    document.getElementById('exercise').focus();
+  }
+  function closeModal() {
+    document.getElementById('workoutModal').classList.remove('show');
+  }
+
+  loadWorkouts();
+</script>
+
+<script>
+    class FitnessTracker {
+        constructor() {
+            this.workouts = this.loadWorkouts();
+            this.initializeForm();
+                this.renderKanbanBoard();
+                this.setDefaultDate();
+            }
+
+            initializeForm() {
+                const form = document.getElementById('workoutForm');
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.addWorkout();
+                });
+            }
+
+            setDefaultDate() {
+                const dateInput = document.getElementById('date');
+                const today = new Date().toISOString().split('T')[0];
+                dateInput.value = today;
+            }
+
+            addWorkout() {
+                const exercise = document.getElementById('exercise').value.trim();
+                const reps = parseInt(document.getElementById('reps').value);
+                const weight = parseFloat(document.getElementById('weight').value);
+                const date = document.getElementById('date').value;
+
+                console.log('Adding workout:', { exercise, reps, weight, date }); // Debug
+
+                if (!exercise || !reps || !weight || !date) {
+                    alert('Bitte fülle alle Felder aus!');
+                    return;
+                }
+
+                const workout = {
+                    id: Date.now(),
+                    exercise,
+                    reps,
+                    weight,
+                    date,
+                    timestamp: new Date().toISOString()
+                };
+
+                this.workouts.unshift(workout);
+                this.saveWorkouts();
+                this.renderKanbanBoard();
+                this.clearForm();
+                closeModal();
+                
+                console.log('Workout added, total workouts:', this.workouts.length); // Debug
+                
+                // Vibration feedback on iOS
+                if (navigator.vibrate) {
+                    navigator.vibrate(50);
+                }
+            }
+
+            deleteWorkout(id) {
+                if (confirm('Workout wirklich löschen?')) {
+                    this.workouts = this.workouts.filter(workout => workout.id !== id);
+                    this.saveWorkouts();
+                    this.renderKanbanBoard();
+                }
+            }
+
+            clearForm() {
+                document.getElementById('exercise').value = '';
+                document.getElementById('reps').value = '';
+                document.getElementById('weight').value = '';
+                this.setDefaultDate();
+            }
+
+            renderKanbanBoard() {
+                const board = document.getElementById('kanbanBoard');
+                const workoutsByDate = this.groupWorkoutsByDate();
+                const dates = this.getDateRange();
+
+                board.innerHTML = dates.map(date => {
+                    const workouts = workoutsByDate[date] || [];
+                    return this.renderColumn(date, workouts);
+                }).join('');
+            }
+
+            groupWorkoutsByDate() {
+                const groups = {};
+                this.workouts.forEach(workout => {
+                    const date = workout.date;
+                    if (!groups[date]) {
+                        groups[date] = [];
+                    }
+                    groups[date].push(workout);
+                });
+                return groups;
+            }
+
+            getDateRange() {
+                const dates = new Set();
+                const today = new Date();
+                
+                // Add last 7 days
+                for (let i = 6; i >= 0; i--) {
+                    const date = new Date(today);
+                    date.setDate(date.getDate() - i);
+                    dates.add(date.toISOString().split('T')[0]);
+                }
+                
+                // Add dates from existing workouts
+                this.workouts.forEach(workout => {
+                    dates.add(workout.date);
+                });
+                
+                return Array.from(dates).sort().reverse();
+            }
+
+            renderColumn(date, workouts) {
+                const dateObj = new Date(date);
+                const isToday = date === new Date().toISOString().split('T')[0];
+                const dayName = dateObj.toLocaleDateString('de-DE', { weekday: 'long' });
+                const formattedDate = dateObj.toLocaleDateString('de-DE', { 
+                    day: '2-digit', 
+                    month: '2-digit' 
+                });
+
+                return `
+                    <div class="kanban-column">
+                        <div class="column-header">
+                            <div class="column-date">${formattedDate}${isToday ? ' (Heute)' : ''}</div>
+                            <div class="column-day">${dayName}</div>
+                            ${workouts.length > 0 ? `<span class="workout-count">${workouts.length} Workout${workouts.length > 1 ? 's' : ''}</span>` : ''}
+                        </div>
+                        <div class="workout-list">
+                            ${workouts.length > 0 
+                                ? workouts.map(workout => this.renderWorkoutCard(workout)).join('')
+                                : '<div class="empty-column">Keine Workouts</div>'
+                            }
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderWorkoutCard(workout) {
+                return `
+                    <div class="workout-card">
+                        <button class="delete-btn" onclick="tracker.deleteWorkout(${workout.id})">&times;</button>
+                        <div class="workout-title">${workout.exercise}</div>
+                        <div class="workout-stats">
+                            <div class="stat-item">
+                                <div class="stat-label">Wiederh.</div>
+                                <div class="stat-value">${workout.reps}x</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Gewicht</div>
+                                <div class="stat-value">${workout.weight} kg</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            loadWorkouts() {
+                const saved = localStorage.getItem('fitnessWorkouts');
+                return saved ? JSON.parse(saved) : [];
+            }
+
+            saveWorkouts() {
+                localStorage.setItem('fitnessWorkouts', JSON.stringify(this.workouts));
+            }
+        }
+
+        // Modal functions
+        function openModal() {
+            document.getElementById('workoutModal').classList.add('show');
+            document.getElementById('exercise').focus();
+        }
+
+        function closeModal() {
+            document.getElementById('workoutModal').classList.remove('show');
+        }
+
+        // Close modal on outside click
+        document.getElementById('workoutModal').addEventListener('click', (e) => {
+            if (e.target.id === 'workoutModal') {
+                closeModal();
+            }
+        });
+        
+        // Close modal on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // Initialize the app
+        const tracker = new FitnessTracker();
+
+        // Prevent zoom on iOS when focusing inputs
+        document.addEventListener('touchstart', function(e) {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>

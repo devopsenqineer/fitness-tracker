@@ -8,12 +8,15 @@ const PORT = process.env.PORT || 3000;
 const DATA_FILE = path.join(__dirname, 'data', 'workouts.json');
 
 // Nur diese Domain erlauben
-const allowedOrigins = ['https://fitness.salad1n.dev'];
+const allowedOrigins = [
+  'https://devopsenqineer.github.io', // GitHub Pages URL deines Frontends
+  'https://fitness.salad1n.dev',             // Falls du noch eine eigene Domain fürs Frontend hast
+  'https://fitness-tracker-vexi.onrender.com' // Falls dein Backend sich auch selbst anfragt (optional)
+];
 
 app.use(cors({
   origin: function(origin, callback) {
-    // Erlaube Anfragen ohne Origin (z.B. Postman, curl)
-    if (!origin) return callback(null, true);
+    if (!origin) return callback(null, true); // Postman, curl etc.
 
     if (allowedOrigins.indexOf(origin) === -1) {
       const msg = `Die CORS Policy für Origin ${origin} ist nicht erlaubt.`;
@@ -23,6 +26,7 @@ app.use(cors({
     return callback(null, true);
   }
 }));
+
 
 app.use(express.json());
 
